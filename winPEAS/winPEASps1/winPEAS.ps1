@@ -830,18 +830,6 @@ Get-ChildItem C:\Users\* | ForEach-Object {
   }
 }
 
-#Whoami 
-Write-Host ""
-if ($TimeStamp) { TimeElapsed }
-Write-Host -ForegroundColor Blue "=========|| WHOAMI INFO"
-Write-Host ""
-if ($TimeStamp) { TimeElapsed }
-Write-Host -ForegroundColor Blue "=========|| Check Token access here: https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation/privilege-escalation-abusing-tokens" -ForegroundColor yellow
-Write-Host -ForegroundColor Blue "=========|| Check if you are inside the Administrators group or if you have enabled any token that can be use to escalate privileges like SeImpersonatePrivilege, SeAssignPrimaryPrivilege, SeTcbPrivilege, SeBackupPrivilege, SeRestorePrivilege, SeCreateTokenPrivilege, SeLoadDriverPrivilege, SeTakeOwnershipPrivilege, SeDebbugPrivilege"
-Write-Host "https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation#users-and-groups" -ForegroundColor Yellow
-Start-Process whoami.exe -ArgumentList "/all" -Wait -NoNewWindow
-
-
 Write-Host ""
 if ($TimeStamp) { TimeElapsed }
 Write-Host -ForegroundColor Blue "=========|| Cloud Credentials Check"
@@ -917,12 +905,6 @@ Write-Host "https://book.hacktricks.xyz/windows-hardening/windows-local-privileg
 cmdkey.exe /list
 
 
-Write-Host ""
-if ($TimeStamp) { TimeElapsed }
-Write-Host -ForegroundColor Blue "=========|| Checking for DPAPI RPC Master Keys"
-Write-Host "Use the Mimikatz 'dpapi::masterkey' module with appropriate arguments (/rpc) to decrypt"
-Write-Host "https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation#dpapi" -ForegroundColor Yellow
-
 $appdataRoaming = "C:\Users\$env:USERNAME\AppData\Roaming\Microsoft\"
 $appdataLocal = "C:\Users\$env:USERNAME\AppData\Local\Microsoft\"
 if ( Test-Path "$appdataRoaming\Protect\") {
@@ -937,22 +919,6 @@ if ( Test-Path "$appdataLocal\Protect\") {
     Write-Host $_.FullName
   }
 }
-
-
-Write-Host ""
-if ($TimeStamp) { TimeElapsed }
-Write-Host -ForegroundColor Blue "=========|| Checking for DPAPI Cred Master Keys"
-Write-Host "Use the Mimikatz 'dpapi::cred' module with appropriate /masterkey to decrypt" 
-Write-Host "You can also extract many DPAPI masterkeys from memory with the Mimikatz 'sekurlsa::dpapi' module" 
-Write-Host "https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation#dpapi" -ForegroundColor Yellow
-
-if ( Test-Path "$appdataRoaming\Credentials\") {
-  Get-ChildItem -Path "$appdataRoaming\Credentials\" -Force
-}
-if ( Test-Path "$appdataLocal\Credentials\") {
-  Get-ChildItem -Path "$appdataLocal\Credentials\" -Force
-}
-
 
 Write-Host ""
 if ($TimeStamp) { TimeElapsed }
@@ -970,12 +936,6 @@ Write-Host ""
 if ($TimeStamp) { TimeElapsed }
 Write-Host -ForegroundColor Blue "=========|| Kerberos tickets (does require admin to interact)"
 try { klist } catch { Write-Host "No active sessions" }
-
-
-Write-Host ""
-if ($TimeStamp) { TimeElapsed }
-Write-Host -ForegroundColor Blue "=========|| Printing ClipBoard (if any)"
-Get-ClipBoardText
 
 ######################## File/Credentials check ########################
 Write-Host ""
@@ -1052,36 +1012,4 @@ $Drives.Root | ForEach-Object {
       }
     }  
   }
-}
-
-######################## Registry Password Check ########################
-
-Write-Host -ForegroundColor Blue "=========|| Registry Password Check"
-# Looking through the entire registry for passwords
-Write-Host "This will take some time. Won't you have a pepsi?"
-$regPath = @("registry::\HKEY_CURRENT_USER\", "registry::\HKEY_LOCAL_MACHINE\")
-# Search for the string in registry values and properties
-foreach ($r in $regPath) {
-(Get-ChildItem -Path $r -Recurse -Force -ErrorAction SilentlyContinue) | ForEach-Object {
-    $property = $_.property
-    $Name = $_.Name
-    $property | ForEach-Object {
-      $Prop = $_
-      $regexSearch.keys | ForEach-Object {
-        $value = $regexSearch[$_]
-        if ($Prop | Where-Object { $_ -like $value }) {
-          Write-Host "Possible Password Found: $Name\$Prop"
-          Write-Host "Key: $_" -ForegroundColor Red
-        }
-        $Prop | ForEach-Object {   
-          $propValue = (Get-ItemProperty "registry::$Name").$_
-          if ($propValue | Where-Object { $_ -like $Value }) {
-            Write-Host "Possible Password Found: $name\$_ $propValue"
-          }
-        }
-      }
-    }
-  }
-  if ($TimeStamp) { TimeElapsed }
-  Write-Host "Finished $r"
 }
